@@ -1,6 +1,7 @@
 package com.example.springsecurity.security;
 
 import jakarta.servlet.DispatcherType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -18,6 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class ApplicationSecurityConfig {
 
+    @Autowired
     private final PasswordEncoder passwordEncoder;
 
     public ApplicationSecurityConfig(PasswordEncoder passwordEncoder) {
@@ -30,9 +32,12 @@ public class ApplicationSecurityConfig {
 
     @Bean
     protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests((authorize ) -> authorize
-                        .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
+        http.
+        csrf().disable().
+                authorizeHttpRequests((authorize ) -> authorize
+                                .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
                         .requestMatchers( "index", "/", "/js/*", "/css/*").permitAll()
+                        .requestMatchers("/api/**").hasRole(ApplicationUserRole.ADMIN.name())
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());
@@ -44,25 +49,23 @@ public class ApplicationSecurityConfig {
         UserDetails userAnna = User.builder()
                 .username("Anna")
                 .password(passwordEncoder.encode("password"))
-//                .roles(ApplicationUserRole.STUDENT.name())
-                .roles("STUDENT")
+                .roles(ApplicationUserRole.ADMIN.name())
                 .build();
 
 
         UserDetails userLinda = User.builder()
                 .username("Linda")
-                .password(passwordEncoder.encode("password123"))
-//                .roles(ApplicationUserRole.ADMIN.name())
-                .roles("ADMIN")
+                .password(passwordEncoder.encode("password"))
+                .roles(ApplicationUserRole.STUDENT.name())
                 .build();
 
-//        UserDetails userTom= User.builder()
-//                .username("Tom")
-//                .password(passwordEncoder.encode("password123"))
-//                .roles(ApplicationUserRole.ADMINTRAINEE.name())
-//                .build();
+        UserDetails userTom= User.builder()
+                .username("Tom")
+                .password(passwordEncoder.encode("password"))
+                .roles(ApplicationUserRole.ADMINTRAINEE.name())
+                .build();
 
-        return new InMemoryUserDetailsManager(userAnna, userLinda);
+        return new InMemoryUserDetailsManager(userAnna, userLinda, userTom);
     }
 
 }
